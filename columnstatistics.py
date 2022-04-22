@@ -17,4 +17,5 @@ for index in range(len(names)):
 sortedCounts = dict(sorted(unsortedCounts.items(), key=lambda x: x[1]))
 
 for record in sortedCounts:
-    print("{0}: {1}".format(record, sortedCounts[record]))
+    if sortedCounts[record] > 10000:
+        print(record)
