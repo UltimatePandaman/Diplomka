@@ -66,17 +66,17 @@ def loadAPs(data, filename='data_aps.out'):
 def setAPFeatures(data, apList):
     for ap in apList:
         #Receiver address
-        data.loc[data['_source.layers.wlan.wlan.ra'] == ap, ['To AP']] = 5
-        data.loc[data['_source.layers.wlan.wlan.ra'] != ap, ['To AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.ra'] == ap, ['To AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.ra'] != ap, ['To AP']] = 5
         #Source address
-        data.loc[data['_source.layers.wlan.wlan.sa'] == ap, ['From AP']] = 5
-        data.loc[data['_source.layers.wlan.wlan.sa'] != ap, ['From AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.sa'] == ap, ['From AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.sa'] != ap, ['From AP']] = 5
         #Transmitter address
-        data.loc[data['_source.layers.wlan.wlan.ta'] == ap, ['Through AP']] = 5
-        data.loc[data['_source.layers.wlan.wlan.ta'] != ap, ['Through AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.ta'] == ap, ['Through AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.ta'] != ap, ['Through AP']] = 5
         #Destination address
-        data.loc[data['_source.layers.wlan.wlan.da'] == ap, ['Destination AP']] = 5
-        data.loc[data['_source.layers.wlan.wlan.da'] != ap, ['Destination AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.da'] == ap, ['Destination AP']] = -5
+        data.loc[data['_source.layers.wlan.wlan.da'] != ap, ['Destination AP']] = 5
 
 ## Rozdělení podle důvěryhodnosti stanice
 # @param[in] data Pandas dataFrame s daty paketů
@@ -84,9 +84,9 @@ def setAPFeatures(data, apList):
 def setStationFeatures(data, training=True):
     if training == True:
         #Ostatní stanice v tréninku známe
-        data.loc[data['_source.layers.wlan.wlan.ra'] != 'ff:ff:ff:ff:ff:ff', ['Station Known', 'Broadcast']] = [-5, -5]
+        data.loc[data['_source.layers.wlan.wlan.ra'] != 'ff:ff:ff:ff:ff:ff', ['Station Known', 'Broadcast']] = [5, 5]
         #Broadcast receiver address
-        data.loc[data['_source.layers.wlan.wlan.ra'] == 'ff:ff:ff:ff:ff:ff', ['Station Known', 'Broadcast']] = [-5, -5]
+        data.loc[data['_source.layers.wlan.wlan.ra'] == 'ff:ff:ff:ff:ff:ff', ['Station Known', 'Broadcast']] = [5, 5]
 
 ## Konvertuje všechny featury z hexadecimálních hodnot na float/int
 # @param[in] data Pandas dataFrame s daty paketů
@@ -109,51 +109,13 @@ def convertCols(data, conversion=int, base=10):
 # @param[in] data Pandas dataFrame s daty paketů
 def requestTypeCounts(data, typesList):
     ## List obsahující dosavadní početní zastoupení všech možný typů rámců 802.11 v pcap
-    # 2D pole
-    typesList = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-                [0,0],
-                [0,0],]
-    malformedCount = 0
     for index, row in data.iterrows():
-        x = data['_source.layers.wlan.wlan.fc_tree.wlan.fc.type']
-        y = data['_source.layers.wlan.wlan.fc_tree.wlan.fc.subtype']
+        x = int(row['_source.layers.wlan.wlan.fc_tree.wlan.fc.type'])
+        y = int(row['_source.layers.wlan.wlan.fc_tree.wlan.fc.subtype'])
         try:
             typesList[x][y] = typesList[x][y] + 1
         except:
             typesList[4][0] = typesList[4][0] + 1
-
-# Načítání dat
-data = loadData('data.json')
-requestTypeCounts(data)
-print(data)
-exit()
-
-aps = loadAPs(data)
-setAPFeatures(data, aps)
-setStationFeatures(data)
-
-# Načte vybrané featury do listu
-ffeatures = open('data_statistics.out', 'r', encoding='utf16')
-features = []
-for feature in ffeatures.readlines():
-    features.append(feature[:-1])
-
-#Slice vybraných sloupců vhodných pro učení klasifikátoru
-data = data[features+[
-'To AP',
-'From AP',
-'Destination AP',
-'Through AP',
-'Station Known',
-'Broadcast']]
-
-# Třeba konvertovat hexadecimální hodnoty
-convertCols(data, int, 16)
-data = data.astype(float)
-for col in data.columns:
-    print('{0}: {1}'.format(col, data.groupby(col)[col].count()))
 
 #
 #data = data.replace(np.nan, 0)
