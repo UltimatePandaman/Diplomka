@@ -1,3 +1,13 @@
+#---------------------------------------------------#
+#                                                   #
+#                Diplomová práce                    #
+#       Detekce anomálií ve Wi-Fi komunikaci        #
+#                                                   #
+#                 Zbyněk Lička                      #
+#                     2022                          #
+#                                                   #
+#---------------------------------------------------#
+
 import string
 import pandas as pd
 import sys
