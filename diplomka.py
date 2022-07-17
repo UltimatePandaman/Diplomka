@@ -1,11 +1,11 @@
-## Abstrakce komunikace jedné stanice
+## Abstrakce komunikace běžné stanice
 # n_grams - sekvence typů rámců po sobě zaslaných v komunikaci
 class Station:
     def __init__(self, station_mac, feature_dim, window):
         if not feature_dim > 0:
             raise ValueError('Feature dimension needs to be larger than 0')
         self.station_mac = station_mac
-        self.savefile = f"content/log/type-sequence-model-{self.station_mac}"
+        self.savefile = f"/log/type-sequence-model"
         self.feature_dim = feature_dim
         self.window = window
         self.loaded = False
@@ -13,7 +13,7 @@ class Station:
     def createModel(self, training_data, batch_size):
         """ Trénování modelu """
         # Inicializace
-        model = Autoencoder(self.window, self.features_dim)
+        model = Classifier(self.window, self.features_dim)
         # Parameters
         params = {'window_size': self.window,
                 'batch_size': batch_size,
