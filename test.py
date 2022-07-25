@@ -1,45 +1,75 @@
-import matplotlib.pyplot as plt
+import sys
+import time
+from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
+import pyqtgraph as pg
 
-x = np.linspace(0, 2 * np.pi, 100)
 
-fig, ax = plt.subplots()
+class App(QtGui.QMainWindow):
+    def __init__(self, parent=None):
+        super(App, self).__init__(parent)
 
-# animated=True tells matplotlib to only draw the artist when we
-# explicitly request it
-(ln,) = ax.plot(x, np.sin(x), animated=True)
+        #### Create Gui Elements ###########
+        self.mainbox = QtGui.QWidget()
+        self.setCentralWidget(self.mainbox)
+        self.mainbox.setLayout(QtGui.QVBoxLayout())
 
-# make sure the window is raised, but the script keeps going
-plt.show(block=False)
+        self.canvas = pg.GraphicsLayoutWidget()
+        self.mainbox.layout().addWidget(self.canvas)
 
-# stop to admire our empty window axes and ensure it is rendered at
-# least once.
-#
-# We need to fully draw the figure at its final size on the screen
-# before we continue on so that :
-#  a) we have the correctly sized and drawn background to grab
-#  b) we have a cached renderer so that ``ax.draw_artist`` works
-# so we spin the event loop to let the backend process any pending operations
-plt.pause(0.1)
+        self.label = QtGui.QLabel()
+        self.mainbox.layout().addWidget(self.label)
 
-# get copy of entire figure (everything inside fig.bbox) sans animated artist
-bg = fig.canvas.copy_from_bbox(fig.bbox)
-# draw the animated artist, this uses a cached renderer
-ax.draw_artist(ln)
-# show the result to the screen, this pushes the updated RGBA buffer from the
-# renderer to the GUI framework so you can see it
-fig.canvas.blit(fig.bbox)
+        self.view = self.canvas.addViewBox()
+        self.view.setAspectLocked(True)
+        self.view.setRange(QtCore.QRectF(0,0, 100, 100))
 
-for j in range(100000):
-    # reset the background back in the canvas state, screen unchanged
-    fig.canvas.restore_region(bg)
-    # update the artist, neither the canvas state nor the screen have changed
-    ln.set_ydata(np.sin(x + (j / 100000) * np.pi))
-    # re-render the artist, updating the canvas state, but not the screen
-    ax.draw_artist(ln)
-    # copy the image to the GUI state, but screen might not be changed yet
-    fig.canvas.blit(fig.bbox)
-    # flush any pending GUI events, re-painting the screen if needed
-    fig.canvas.flush_events()
-    # you can put a pause in if you want to slow things down
-    # plt.pause(.1)
+        #  image plot
+        self.img = pg.ImageItem(border='w')
+        self.view.addItem(self.img)
+
+        self.canvas.nextRow()
+        #  line plot
+        self.otherplot = self.canvas.addPlot()
+        self.h2 = self.otherplot.plot(pen='y')
+
+
+        #### Set Data  #####################
+
+        self.x = np.linspace(0,50., num=100)
+        self.X,self.Y = np.meshgrid(self.x,self.x)
+
+        self.counter = 0
+        self.fps = 0.
+        self.lastupdate = time.time()
+
+        #### Start  #####################
+        self._update()
+
+    def _update(self):
+
+        self.data = np.sin(self.X/3.+self.counter/9.)*np.cos(self.Y/3.+self.counter/9.)
+        self.ydata = np.sin(self.x/3.+ self.counter/9.)
+
+        self.img.setImage(self.data)
+        self.h2.setData(self.ydata)
+
+        now = time.time()
+        dt = (now-self.lastupdate)
+        if dt <= 0:
+            dt = 0.000000000001
+        fps2 = 1.0 / dt
+        self.lastupdate = now
+        self.fps = self.fps * 0.9 + fps2 * 0.1
+        tx = 'Mean Frame Rate:  {fps:.3f} FPS'.format(fps=self.fps )
+        self.label.setText(tx)
+        QtCore.QTimer.singleShot(1, self._update)
+        self.counter += 1
+
+
+if __name__ == '__main__':
+
+    app = QtGui.QApplication(sys.argv)
+    thisapp = App()
+    thisapp.show()
+    sys.exit(app.exec_())
